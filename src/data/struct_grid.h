@@ -1,0 +1,8 @@
+//
+// Created by wyz on 20-12-4.
+//
+
+#ifndef VOLUMERENDER_STRUCT_GRID_H
+#define VOLUMERENDER_STRUCT_GRID_H
+
+#endif //VOLUMERENDER_STRUCT_GRID_H
