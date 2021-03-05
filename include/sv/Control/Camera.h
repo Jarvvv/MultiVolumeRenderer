@@ -20,6 +20,16 @@ namespace sv{
         LEFT,RIGHT,
         UP,DOWN
     };
+    enum class InputType {
+        MOVE_FORWARD, MOVE_BACKWARD,
+        MOVE_LEFT, MOVE_RIGHT,
+        MOVE_UP, MOVE_DOWN,
+        ZOOM_UP, ZOOM_DOWN,
+        TURN_UP, TURN_DOWN,
+        TURN_LEFT, TURN_RIGHT,
+        NONE
+    };
+
     class Camera{
 
     public:
@@ -37,15 +47,20 @@ namespace sv{
         }
 
         glm::mat4 getViewMatrix();
+
+        void processInput(InputType inputType, float delta_t);
+
         void processMovementByKeyboard(CameraMoveDirection direction,float delta_t);
         void processMouseMovement(float xoffset,float yoffset);
         void processMouseScroll(float yoffset);
         void processKeyboardForArgs(CameraDefinedKey arg);
         void updateCameraVectors();
 
-    private:
+    public:
         glm::vec3 pos;//point
         glm::vec3 front;//vector
+        float zoom;
+    private:
         glm::vec3 up;//vector
         glm::vec3 right;//vector
 
@@ -56,7 +71,9 @@ namespace sv{
 
         float move_speed;
         float mouse_sensitivity;
-        float zoom;
+
+        const float zoom_speed = 1.0f;
+        const float turn_speed = 1.0f;
     public:
         float getZoom(){return zoom;}
     };
@@ -67,6 +84,53 @@ namespace sv{
 //        std::cout<<up.x<<" "<<up.y<<" "<<up.z<<std::endl;
         return glm::lookAt(pos,pos+front,up);
     }
+
+    inline void Camera::processInput(InputType inputType, float delta_t)
+    {
+        if (static_cast<int>(inputType) < 6) {
+            return processMovementByKeyboard(static_cast<CameraMoveDirection>(inputType), delta_t);
+        }
+
+        float zs = zoom_speed * delta_t;
+        float ts = turn_speed * delta_t;
+        switch(inputType) {
+            case InputType::ZOOM_UP:
+                zoom += zs;
+                if(zoom>45.0f)
+                    zoom=45.0f;
+                break;
+            case InputType::ZOOM_DOWN:
+                zoom -= zs;
+                if(zoom<0.1f)
+                    zoom=0.1f;
+                break;
+            case InputType::TURN_UP:
+                pitch += ts;
+                if (pitch > 60.0f)
+                    pitch = 60.0f;
+                updateCameraVectors();
+                break;
+            case InputType::TURN_DOWN:
+                pitch -= ts;
+                if (pitch < -60.f)
+                    pitch = -60.f;
+                updateCameraVectors();
+                break;
+            case InputType::TURN_LEFT:
+                yaw -= ts;
+                updateCameraVectors();
+                break;
+            case InputType::TURN_RIGHT:
+                yaw += ts;
+                updateCameraVectors();
+                break;
+            case InputType::NONE:
+                break;
+            default:
+                std::cerr << "Camera::Unhandled InputType";
+        }
+    }
+
     inline void Camera::processMovementByKeyboard(CameraMoveDirection direction,float delta_t)
     {
 

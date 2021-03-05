@@ -14,6 +14,7 @@ namespace sv{
     using Keyboard_Callback= std::function<void(void*,int,int,int,int)> ;
     using MouseButton_Callback= std::function<void(void*,int,int,int)> ;
     using Process_Input=std::function<void(void*)> ;
+
     class Controller{
     public:
         Controller()=delete;
@@ -22,7 +23,7 @@ namespace sv{
         static void ScrollCallback(GLFWwindow*,double,double);
         static void KeyCallback(GLFWwindow*,int,int,int,int);
         static void MouseButtonCallback(GLFWwindow*,int,int,int);
-        static void processInput(GLFWwindow*);
+        static void processInput(GLFWwindow*, int world_rank, int world_size);
         static sv::Camera& getCamera(){ return camera; }
 
         static FramebufferSize_Callback framebufferresize_event;

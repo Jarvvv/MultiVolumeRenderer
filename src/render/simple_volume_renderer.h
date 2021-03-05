@@ -11,9 +11,8 @@
 #include<sv/Render/Shader.h>
 #include<sv/Control/Controller.h>
 #include<string>
-#include<imgui.h>
-#include<imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
+
+#include <mpi.h>
 #define TF_TEXTURE_BINDING 0
 #define PREINT_TF_TEXTURE_BINDING 1
 #define ENTRYPOS_TEXTURE_BINDING 2
@@ -22,11 +21,13 @@
 #define ENTRYPOS_IMAGE_BINDING 0
 #define EXITPOS_IMAGE_BINDING 1
 
+#define MPICH_SKIP_MPICXX
 
-#define RAYCAST_POS_FRAG "C:/Users/vr/projects/VolumeRenderer/src/render/shader/raycast_pos_f.glsl"
-#define RAYCAST_POS_VERT "C:/Users/vr/projects/VolumeRenderer/src/render/shader/raycast_pos_v.glsl"
-#define RAYCASTING_FRAG "C:/Users/vr/projects/VolumeRenderer/src/render/shader/raycasting_f.glsl"
-#define RAYCASTING_VERT "C:/Users/vr/projects/VolumeRenderer/src/render/shader/raycasting_v.glsl"
+
+#define RAYCAST_POS_FRAG "E:/Project/MultiVolumeRenderer/src/render/shader/raycast_pos_f.glsl"
+#define RAYCAST_POS_VERT "E:/Project/MultiVolumeRenderer/src/render/shader/raycast_pos_v.glsl"
+#define RAYCASTING_FRAG "E:/Project/MultiVolumeRenderer/src/render/shader/raycasting_f.glsl"
+#define RAYCASTING_VERT "E:/Project/MultiVolumeRenderer/src/render/shader/raycasting_v.glsl"
 
 /**
  * raw volume data renderer, no accelerate
@@ -34,8 +35,14 @@
 class SimpleVolumeRenderer: public IVolumeRenderer{
 public:
     SimpleVolumeRenderer()
-    :window_width(1200),window_height(900)
+    :window_width(200),window_height(200)
     {
+        MPI_Init(NULL, NULL);
+        MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+        std::cout << world_rank << std::endl;
+
         initGL();
         volume_manager=std::make_unique<SimpleVolumeManager>();
         raycastpos_shader=std::make_unique<sv::Shader>(RAYCAST_POS_VERT,RAYCAST_POS_FRAG);
@@ -55,6 +62,10 @@ public:
 public:
     void deleteGLResource();
     ~SimpleVolumeRenderer();
+
+public:
+    static int world_rank;
+    static int world_size;
 private:
     /**
      * GL texture
@@ -95,6 +106,8 @@ private:
      */
     GLFWwindow *window;
     uint32_t window_width,window_height;
+
+
 };
 
 #endif //VOLUMERENDER_SIMPLE_VOLUME_RENDERER_H

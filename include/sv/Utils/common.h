@@ -63,6 +63,7 @@ inline void print(T t,Args... args)
     print(args...);
 }
 
+/*
 template<typename T>
 class ConcurrentQueue
 {
@@ -150,7 +151,7 @@ private:
     std::mutex m_mutex;
     std::condition_variable m_cond;
     size_t maxSize;
-};
+};*/
 
 
 #endif //VOLUMERENDERER_COMMON_H

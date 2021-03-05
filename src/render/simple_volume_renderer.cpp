@@ -8,6 +8,7 @@
 #include<cudaGL.h>
 #include<windows.h>
 #include<sv/Utils/common.h>
+
 #define volume_file_name_0 "aneurism_256_256_256_uint8.raw"
 #define volume_0_len 256*256*256
 
@@ -27,6 +28,9 @@ bool readVolumeData(uint8_t* &data, int64_t& len)
     else
         return false;
 }
+
+int SimpleVolumeRenderer::world_rank = 0;
+int SimpleVolumeRenderer::world_size = 1;
 
 void SimpleVolumeRenderer::setupVolume(const char *file_path)
 {
@@ -192,7 +196,7 @@ void SimpleVolumeRenderer::render()
 //        std::cout<<"fps: "<<1.0f/sv::Controller::delta_time<<std::endl;
 
         glfwPollEvents();
-        sv::Controller::processInput(window);
+        sv::Controller::processInput(window, world_rank, world_size);
 
         glm::mat4 model=glm::mat4(1.0f);
         glm::mat4 view=sv::Controller::getCamera().getViewMatrix();
@@ -200,6 +204,17 @@ void SimpleVolumeRenderer::render()
         glm::mat4 projection=glm::perspective(glm::radians(sv::Controller::getCamera().getZoom()),
                                                            (float)window_width/(float)window_height,
                                                            0.1f,50.0f);
+
+        int size = sqrt(world_size);
+        projection[0][0] *= size;
+        projection[1][1] *= size;
+
+        int col = world_rank % size;
+        int row = world_rank / size;
+
+        projection[2][0] = -size + 2 * col + 1;
+        projection[2][1] = size - 2 * row + 1;
+
         glm::mat4 mvp=projection*view*model;
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -227,6 +242,7 @@ void SimpleVolumeRenderer::render()
 
         GL_CHECK
 
+        MPI_Barrier(MPI_COMM_WORLD);
         glfwSwapBuffers(window);
     }
     glfwTerminate();
@@ -238,12 +254,17 @@ void SimpleVolumeRenderer::initGL()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_DECORATED, GL_FALSE);
     glfwSwapInterval(1);
     window = glfwCreateWindow(window_width, window_height, "Volume Render", NULL, NULL);
+    int size = static_cast<int>(sqrt(world_size));
+    int col = world_rank % size;
+    int row = world_rank / size;
+    glfwSetWindowPos(window, col * window_width, row * window_height);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
-        return ;
+        return;
     }
 
     glfwMakeContextCurrent(window);

@@ -3,7 +3,9 @@
 //
 #include<glad/glad.h>
 #include<sv/Control/Controller.h>
+
 #include <mpi.h>
+#include <memory>
 
 namespace sv {
     sv::Camera sv::Controller::camera = sv::Camera(glm::vec3(0.5f, 0.5f, 1.5f));
@@ -37,11 +39,11 @@ namespace sv {
         last_x = xpos;
         last_y = ypos;
 
-        camera.processMouseMovement(dx, dy);
+        // camera.processMouseMovement(dx, dy);
     }
 
     void sv::Controller::ScrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
-        camera.processMouseScroll(yoffset);
+        // camera.processMouseScroll(yoffset);
     }
 
     void sv::Controller::KeyCallback(GLFWwindow *, int, int, int, int) {
@@ -52,22 +54,53 @@ namespace sv {
 
     }
 
-    void sv::Controller::processInput(GLFWwindow *window) {
+    void sv::Controller::processInput(GLFWwindow *window, int world_rank, int world_size) {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
 
+        InputType operation = InputType::NONE;
+
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            camera.processMovementByKeyboard(sv::CameraMoveDirection::FORWARD, delta_time);
+            operation = InputType::MOVE_FORWARD;
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            camera.processMovementByKeyboard(sv::CameraMoveDirection::BACKWARD, delta_time);
+            operation = InputType::MOVE_BACKWARD;
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            camera.processMovementByKeyboard(sv::CameraMoveDirection::LEFT, delta_time);
+            operation = InputType::MOVE_LEFT;
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            camera.processMovementByKeyboard(sv::CameraMoveDirection::RIGHT, delta_time);
+            operation = InputType::MOVE_RIGHT;
         if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-            camera.processMovementByKeyboard(sv::CameraMoveDirection::UP, delta_time);
+            operation = InputType::MOVE_UP;
         if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-            camera.processMovementByKeyboard(sv::CameraMoveDirection::DOWN, delta_time);
+            operation = InputType::MOVE_DOWN;
+        if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
+            operation = InputType::ZOOM_UP;
+        if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
+            operation = InputType::ZOOM_DOWN;
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+            operation = InputType::TURN_UP;
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+            operation = InputType::TURN_DOWN;
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+            operation = InputType::TURN_LEFT;
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+            operation = InputType::TURN_RIGHT;
+
+        static std::unique_ptr<InputType> inputs;
+        if (world_rank == 0 && !inputs) {
+            inputs = std::unique_ptr<InputType>(new InputType[world_size]);
+        }
+
+        MPI_Gather(&operation, 1, MPI_INT, inputs.get(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        if(world_rank == 0) {
+            for(int i = 0; i < world_size; i++) {
+                camera.processInput(*(inputs.get() + i), delta_time);
+            }
+        }
+
+        MPI_Bcast(&camera.pos[0], 3, MPI_FLOAT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&camera.front[0], 3, MPI_FLOAT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&camera.zoom, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
     }
 
 }

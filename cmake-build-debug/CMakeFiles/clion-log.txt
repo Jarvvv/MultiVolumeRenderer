@@ -1,8 +1,0 @@
-"C:\Program Files\JetBrains\CLion 2020.2.4\bin\cmake\win\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - NMake Makefiles" C:\Users\vr\projects\VolumeRenderer
--- C:/Users/vr/projects/VolumeRenderer/third_party/VolumeCompression/include
--- C:/Users/vr/projects/VolumeRenderer/cmake-build-debug/third_party/glfw/src/glfw3.lib
--- Could NOT find Doxygen (missing: DOXYGEN_EXECUTABLE) 
--- Using Win32 for window creation
--- Configuring done
--- Generating done
--- Build files have been written to: C:/Users/vr/projects/VolumeRenderer/cmake-build-debug
